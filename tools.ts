@@ -8,6 +8,30 @@ export const toolSchemas = [
   {
     type: "function" as const,
     function: {
+      name: "think",
+      description: `Use this tool to plan your research strategy, reflect on findings, and decide next steps. This is your internal scratchpad.
+
+Use it:
+- BEFORE searching: plan which angles to cover, estimate depth needed
+- BETWEEN searches: assess what you found, identify gaps, decide whether to go deeper or pivot
+- BEFORE answering: verify you have enough coverage and your sources are solid
+
+This tool has no side effects — it just helps you reason strategically.`,
+      parameters: {
+        type: "object",
+        properties: {
+          thought: {
+            type: "string",
+            description: "Your strategic reasoning — what you know, what's missing, what to do next",
+          },
+        },
+        required: ["thought"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
       name: "web_search",
       description:
         "Search the web for current information. Use this when you need up-to-date facts, news, or data.",
@@ -16,7 +40,7 @@ export const toolSchemas = [
         properties: {
           query: {
             type: "string",
-            description: "The search query",
+            description: "The search query — be specific and targeted",
           },
         },
         required: ["query"],
@@ -44,10 +68,18 @@ export const toolSchemas = [
 
 // --- Tool Handlers (what actually runs) ---
 
-type ToolHandler = (args: Record<string, string>) => Promise<string>;
+type ToolHandler = (args: Record<string, string | undefined>) => Promise<string>;
 
 export const toolHandlers: Record<string, ToolHandler> = {
-  web_search: async ({ query }) => {
+  think: async ({ thought = "" }) => {
+    console.log(`  💭 Thinking: "${thought.slice(0, 80)}..."`);
+    // The think tool doesn't do anything external — it just lets the LLM
+    // reason in a structured way. The thought is already in the conversation
+    // history, so the LLM can reference it in future turns.
+    return "Strategy noted. Continue with your plan.";
+  },
+
+  web_search: async ({ query = "" }) => {
     console.log(`  🔍 Searching: "${query}"`);
 
     const apiKey = process.env.TAVILY_API_KEY;
@@ -71,9 +103,11 @@ export const toolHandlers: Record<string, ToolHandler> = {
       return `Search error (${response.status}): ${error}`;
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as {
+      answer?: string;
+      results: { title: string; url: string; content: string }[];
+    };
 
-    // Format the results into clean text for the LLM
     let output = "";
 
     if (data.answer) {
@@ -81,15 +115,18 @@ export const toolHandlers: Record<string, ToolHandler> = {
     }
 
     for (const result of data.results) {
+      const snippet = result.content.length > 300
+        ? result.content.slice(0, 300) + "..."
+        : result.content;
       output += `Title: ${result.title}\n`;
       output += `URL: ${result.url}\n`;
-      output += `${result.content}\n\n`;
+      output += `${snippet}\n\n`;
     }
 
     return output;
   },
 
-  read_file: async ({ path }) => {
+  read_file: async ({ path = "" }) => {
     console.log(`  📄 Reading file: ${path}`);
     try {
       const file = Bun.file(path);

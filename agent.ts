@@ -42,6 +42,12 @@ type ChatResponse = {
     };
     finish_reason: string;
   }[];
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+    prompt_cache_hit_tokens?: number;
+  };
 };
 
 // --- The actual API call ---
@@ -83,7 +89,7 @@ async function callLLM(
 export function createChat(
   provider: Provider,
   systemPrompt: string,
-  maxIterations: number = 10
+  maxIterations: number = 25 // High safety cap — the agent decides when to stop, not us
 ) {
   const messages: Message[] = [
     { role: "system", content: systemPrompt },
@@ -92,12 +98,25 @@ export function createChat(
   return async function chat(userMessage: string): Promise<string> {
     messages.push({ role: "user", content: userMessage });
 
+    let totalIn = 0, totalOut = 0, totalCached = 0;
     console.log();
 
     for (let i = 0; i < maxIterations; i++) {
       console.log(`--- Iteration ${i + 1} ---`);
 
       const response = await callLLM(provider, messages);
+
+      if (response.usage) {
+        const u = response.usage;
+        totalIn += u.prompt_tokens;
+        totalOut += u.completion_tokens;
+        totalCached += u.prompt_cache_hit_tokens || 0;
+        const cacheRate = u.prompt_cache_hit_tokens
+          ? ((u.prompt_cache_hit_tokens / u.prompt_tokens) * 100).toFixed(0)
+          : "0";
+        console.log(`  📊 tokens: ${u.prompt_tokens} in / ${u.completion_tokens} out / ${u.prompt_cache_hit_tokens || 0} cached (${cacheRate}% hit)`);
+      }
+
       const choice = response.choices[0];
       if (!choice) throw new Error("No response from LLM");
       const assistantMessage = choice.message;
@@ -125,18 +144,22 @@ export function createChat(
             continue;
           }
 
+          const start = performance.now();
           const result = await handler(toolArgs);
+          const elapsed = ((performance.now() - start) / 1000).toFixed(2);
+
           messages.push({
             role: "tool",
             tool_call_id: toolCall.id,
             content: result,
           });
 
-          console.log(`  ✅ ${toolName} done`);
+          console.log(`  ✅ ${toolName} done (${elapsed}s)`);
         }
       } else {
         const answer = assistantMessage.content || "No response";
-        console.log(`✅ Done (${i + 1} iteration(s))\n`);
+        const overallCache = totalIn > 0 ? ((totalCached / totalIn) * 100).toFixed(0) : "0";
+        console.log(`✅ Done (${i + 1} iteration(s)) | Total: ${totalIn} in / ${totalOut} out / ${overallCache}% cached\n`);
         return answer;
       }
     }
@@ -200,7 +223,9 @@ export async function runAgent(
         }
 
         // Run the tool and get the result
+        const start = performance.now();
         const result = await handler(toolArgs);
+        const elapsed = ((performance.now() - start) / 1000).toFixed(2);
 
         // Send the result back to the LLM
         messages.push({
@@ -209,7 +234,7 @@ export async function runAgent(
           content: result,
         });
 
-        console.log(`  ✅ ${toolName} completed`);
+        console.log(`  ✅ ${toolName} completed (${elapsed}s)`);
       }
 
       // Loop continues - LLM will see the tool results next iteration
