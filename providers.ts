@@ -52,6 +52,6 @@ export const providers = {
     name: "Ollama",
     baseURL: "http://localhost:11434/v1",
     apiKey: "ollama", // Ollama ignores this but the field is required
-    model: "llama3.1",
+    model: "llama3.1:8b",
   },
 } as const satisfies Record<string, Provider>;
