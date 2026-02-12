@@ -15,6 +15,17 @@
 import type { Provider } from "./providers";
 import { toolSchemas, toolHandlers } from "./tools";
 
+// --- Pretty terminal colors ---
+const c = {
+  dim: (s: string) => `\x1b[90m${s}\x1b[0m`,
+  bold: (s: string) => `\x1b[1m${s}\x1b[0m`,
+  cyan: (s: string) => `\x1b[36m${s}\x1b[0m`,
+  green: (s: string) => `\x1b[32m${s}\x1b[0m`,
+  yellow: (s: string) => `\x1b[33m${s}\x1b[0m`,
+  magenta: (s: string) => `\x1b[35m${s}\x1b[0m`,
+  red: (s: string) => `\x1b[31m${s}\x1b[0m`,
+};
+
 // --- Types (matching OpenAI-compatible format) ---
 
 type Message = {
@@ -99,13 +110,16 @@ export function createChat(
     messages.push({ role: "user", content: userMessage });
 
     let totalIn = 0, totalOut = 0, totalCached = 0;
+    const startTime = performance.now();
     console.log();
 
     for (let i = 0; i < maxIterations; i++) {
-      console.log(`--- Iteration ${i + 1} ---`);
+      console.log(c.dim(`  ● Step ${i + 1} ${"─".repeat(40)}`));
 
       const response = await callLLM(provider, messages);
 
+      // Token tracking
+      let tokenLine = "";
       if (response.usage) {
         const u = response.usage;
         totalIn += u.prompt_tokens;
@@ -114,7 +128,7 @@ export function createChat(
         const cacheRate = u.prompt_cache_hit_tokens
           ? ((u.prompt_cache_hit_tokens / u.prompt_tokens) * 100).toFixed(0)
           : "0";
-        console.log(`  📊 tokens: ${u.prompt_tokens} in / ${u.completion_tokens} out / ${u.prompt_cache_hit_tokens || 0} cached (${cacheRate}% hit)`);
+        tokenLine = c.dim(`    📊 ${u.prompt_tokens.toLocaleString()} in │ ${u.completion_tokens.toLocaleString()} out │ ${cacheRate}% cached`);
       }
 
       const choice = response.choices[0];
@@ -124,15 +138,19 @@ export function createChat(
       messages.push(assistantMessage as Message);
 
       if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
-        console.log(
-          `  🔧 Using ${assistantMessage.tool_calls.length} tool(s)`
-        );
-
         for (const toolCall of assistantMessage.tool_calls) {
           const toolName = toolCall.function.name;
           const toolArgs = JSON.parse(toolCall.function.arguments);
 
-          console.log(`  → ${toolName}(${JSON.stringify(toolArgs)})`);
+          // Pretty tool-specific output
+          if (toolName === "think") {
+            const thought = toolArgs.thought || "";
+            console.log(`    💭 ${c.magenta(thought.slice(0, 100))}${thought.length > 100 ? c.dim("...") : ""}`);
+          } else if (toolName === "web_search") {
+            console.log(`    🔍 ${c.cyan(`"${toolArgs.query}"`)}`);
+          } else {
+            console.log(`    🔧 ${c.yellow(toolName)}(${JSON.stringify(toolArgs)})`);
+          }
 
           const handler = toolHandlers[toolName];
           if (!handler) {
@@ -141,12 +159,13 @@ export function createChat(
               tool_call_id: toolCall.id,
               content: `Error: Unknown tool "${toolName}"`,
             });
+            console.log(`    ${c.red("✗ Unknown tool")}`);
             continue;
           }
 
-          const start = performance.now();
+          const toolStart = performance.now();
           const result = await handler(toolArgs);
-          const elapsed = ((performance.now() - start) / 1000).toFixed(2);
+          const elapsed = ((performance.now() - toolStart) / 1000).toFixed(2);
 
           messages.push({
             role: "tool",
@@ -154,12 +173,19 @@ export function createChat(
             content: result,
           });
 
-          console.log(`  ✅ ${toolName} done (${elapsed}s)`);
+          if (toolName !== "think") {
+            console.log(c.dim(`    ✓ ${elapsed}s`));
+          }
         }
+        if (tokenLine) console.log(tokenLine);
       } else {
         const answer = assistantMessage.content || "No response";
+        const totalTime = ((performance.now() - startTime) / 1000).toFixed(1);
         const overallCache = totalIn > 0 ? ((totalCached / totalIn) * 100).toFixed(0) : "0";
-        console.log(`✅ Done (${i + 1} iteration(s)) | Total: ${totalIn} in / ${totalOut} out / ${overallCache}% cached\n`);
+        console.log();
+        console.log(c.green(`  ✅ Done in ${i + 1} steps (${totalTime}s)`));
+        console.log(c.dim(`  📊 Total: ${totalIn.toLocaleString()} in │ ${totalOut.toLocaleString()} out │ ${overallCache}% cached`));
+        console.log();
         return answer;
       }
     }

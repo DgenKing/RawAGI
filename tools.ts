@@ -71,8 +71,7 @@ This tool has no side effects — it just helps you reason strategically.`,
 type ToolHandler = (args: Record<string, string | undefined>) => Promise<string>;
 
 export const toolHandlers: Record<string, ToolHandler> = {
-  think: async ({ thought = "" }) => {
-    console.log(`  💭 Thinking: "${thought.slice(0, 80)}..."`);
+  think: async (_args) => {
     // The think tool doesn't do anything external — it just lets the LLM
     // reason in a structured way. The thought is already in the conversation
     // history, so the LLM can reference it in future turns.
@@ -80,8 +79,6 @@ export const toolHandlers: Record<string, ToolHandler> = {
   },
 
   web_search: async ({ query = "" }) => {
-    console.log(`  🔍 Searching: "${query}"`);
-
     const apiKey = process.env.TAVILY_API_KEY;
     if (!apiKey) {
       return "Error: TAVILY_API_KEY not set in .env";
@@ -127,7 +124,6 @@ export const toolHandlers: Record<string, ToolHandler> = {
   },
 
   read_file: async ({ path = "" }) => {
-    console.log(`  📄 Reading file: ${path}`);
     try {
       const file = Bun.file(path);
       return await file.text();

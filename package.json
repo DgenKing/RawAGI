@@ -1,5 +1,5 @@
 {
-  "name": "ai-agents",
+  "name": "babyagi",
   "module": "index.ts",
   "type": "module",
   "private": true,

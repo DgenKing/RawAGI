@@ -39,30 +39,63 @@ After each search, call "think" to assess:
 STOP researching when you have enough — don't search for the sake of searching.
 GO DEEPER when your results are shallow, contradictory, or missing key angles.
 
+## Red Team Phase (Epistemic Discipline)
+
+After your initial research (usually 2-3 searches), call "think" to challenge your own findings:
+- Do any sources contradict each other? If so, which is more credible and why?
+- Is there a strong counterargument you haven't explored?
+- Are your sources biased toward one perspective (e.g. all from the same industry)?
+- What's the biggest uncertainty in what you've found?
+
+Then search for at least ONE source that disagrees with or challenges your current findings.
+If no disagreement exists, find the biggest limitation or caveat in the data.
+
+## Primary Source Protocol
+
+When a query involves science, health, policy, or government data, prioritize primary sources over aggregators:
+- For health/safety claims: search with "site:who.int" or "site:fda.gov" or "site:nih.gov"
+- For government policy: search with "site:.gov" or "site:.int"
+- For academic research: search with "site:.edu" or "filetype:pdf"
+- For statistics/data: search for the original report, not a news article about the report
+
+In your "think" step, ask: "Am I citing the original source, or a blog/news site that summarized it?"
+Always prefer: WHO > food-safety.com, NIH > healthline.com, the actual paper > a tweet about the paper.
+
 ## Output Rules
 
 - Never make up facts — if you can't find it, say so
 - Cite your sources with URLs
 - Match answer depth to question complexity (short answers for simple questions)
 - Structure complex answers with clear sections
+- If sources disagree, say so — don't blend contradictions into a smooth narrative
+- State confidence level (high/medium/low) on contested or emerging claims
+- Distinguish between well-established facts and contested/evolving claims
 
 You have access to tools. Use them strategically, not mechanically.`;
 
 // --- Interactive chat ---
 const chat = createChat(provider, systemPrompt);
 
-console.log(`\n🤖 ${provider.name} Research Agent (${provider.model})`);
-console.log(`Type your questions. "exit" to quit.\n`);
+const dim = (s: string) => `\x1b[90m${s}\x1b[0m`;
+const bold = (s: string) => `\x1b[1m${s}\x1b[0m`;
+const cyan = (s: string) => `\x1b[36m${s}\x1b[0m`;
+
+console.log();
+console.log(dim("  ╭─────────────────────────────────────────────╮"));
+console.log(`  │  🍼 ${bold("BabyAGI")}                                   │`);
+console.log(`  │  ${dim(`${provider.name} · ${provider.model}`)}${" ".repeat(Math.max(0, 33 - provider.name.length - provider.model.length))}│`);
+console.log(dim("  ╰─────────────────────────────────────────────╯"));
+console.log(dim(`  Type your questions. ${cyan('"exit"')} to quit.\n`));
 
 while (true) {
-  const input = prompt("You: ");
+  const input = prompt("\x1b[1mYou:\x1b[0m ");
   if (!input || input.trim().toLowerCase() === "exit") {
-    console.log("👋 Goodbye!");
+    console.log(dim("\n  👋 Goodbye!\n"));
     break;
   }
 
   const answer = await chat(input.trim());
-  console.log("─".repeat(50));
+  console.log(dim("  ─".repeat(25)));
   console.log(answer);
-  console.log("─".repeat(50) + "\n");
+  console.log(dim("  ─".repeat(25)) + "\n");
 }
