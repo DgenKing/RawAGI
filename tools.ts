@@ -71,6 +71,23 @@ This tool has no side effects — it just helps you reason strategically.`,
   {
     type: "function" as const,
     function: {
+      name: "fetch_url",
+      description: "Fetch the full content of a specific URL. Use this to read articles, documentation, or any webpage in full.",
+      parameters: {
+        type: "object",
+        properties: {
+          url: {
+            type: "string",
+            description: "The URL to fetch",
+          },
+        },
+        required: ["url"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
       name: "read_file",
       description: "Read the contents of a local file.",
       parameters: {
@@ -142,6 +159,28 @@ export const toolHandlers: Record<string, ToolHandler> = {
     }
 
     return output;
+  },
+
+  fetch_url: async ({ url = "" }) => {
+    try {
+      const response = await fetch(url, {
+        headers: { "User-Agent": "Mozilla/5.0 (compatible; RawAGI/1.0)" },
+      });
+      if (!response.ok) {
+        return `Fetch error (${response.status}): ${response.statusText}`;
+      }
+      const html = await response.text();
+      // Strip HTML tags to get readable text
+      const text = html
+        .replace(/<script[\s\S]*?<\/script>/gi, "")
+        .replace(/<style[\s\S]*?<\/style>/gi, "")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/\s{2,}/g, " ")
+        .trim();
+      return text.length > 8000 ? text.slice(0, 8000) + "\n\n[truncated]" : text;
+    } catch (error) {
+      return `Error fetching URL: ${error}`;
+    }
   },
 
   write_file: async ({ path = "", content = "" }) => {
