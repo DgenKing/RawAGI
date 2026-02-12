@@ -73,7 +73,7 @@ curl -fsSL https://bun.sh/install | bash
 **2. Clone and install**
 ```bash
 git clone https://github.com/DgenKing/RawAGI.git
-cd AI-agents
+cd RawAGI
 bun install
 ```
 
