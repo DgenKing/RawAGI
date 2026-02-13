@@ -88,6 +88,27 @@ This tool has no side effects — it just helps you reason strategically.`,
   {
     type: "function" as const,
     function: {
+      name: "append_file",
+      description: "Append content to the end of a file. Creates the file if it doesn't exist. Use this for adding to logs, notes, or building up documents incrementally.",
+      parameters: {
+        type: "object",
+        properties: {
+          path: {
+            type: "string",
+            description: "The file path to append to",
+          },
+          content: {
+            type: "string",
+            description: "The content to append",
+          },
+        },
+        required: ["path", "content"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
       name: "read_file",
       description: "Read the contents of a local file.",
       parameters: {
@@ -189,6 +210,17 @@ export const toolHandlers: Record<string, ToolHandler> = {
       return `File written: ${path}`;
     } catch (error) {
       return `Error writing file: ${error}`;
+    }
+  },
+
+  append_file: async ({ path = "", content = "" }) => {
+    try {
+      const file = Bun.file(path);
+      const existing = await file.exists() ? await file.text() : "";
+      await Bun.write(path, existing + content);
+      return `Content appended to: ${path}`;
+    } catch (error) {
+      return `Error appending to file: ${error}`;
     }
   },
 
