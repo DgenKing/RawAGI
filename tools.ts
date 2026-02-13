@@ -163,7 +163,7 @@ This tool has no side effects — it just helps you reason strategically.`,
     type: "function" as const,
     function: {
       name: "save_research",
-      description: "Save a research query and its answer to the local database. Use this after completing a research task so the user can find it later.",
+      description: "Save a research query and its answer to the local database. Use this after completing a research task so the user can find it later. Always rate credibility based on source quality.",
       parameters: {
         type: "object",
         properties: {
@@ -175,8 +175,17 @@ This tool has no side effects — it just helps you reason strategically.`,
             type: "string",
             description: "The research findings/answer",
           },
+          credibility: {
+            type: "string",
+            enum: ["high", "medium", "low"],
+            description: "Source credibility rating. high = primary sources (.gov, .edu, WHO, peer-reviewed). medium = reputable news/industry sites. low = blogs, social media, unverified claims.",
+          },
+          sources: {
+            type: "string",
+            description: "Comma-separated list of source URLs used",
+          },
         },
-        required: ["query", "answer"],
+        required: ["query", "answer", "credibility"],
       },
     },
   },
@@ -332,10 +341,10 @@ export const toolHandlers: Record<string, ToolHandler> = {
     }
   },
 
-  save_research: async ({ query = "", answer = "" }) => {
+  save_research: async ({ query = "", answer = "", credibility = "medium", sources = "" }) => {
     try {
-      saveResearch(query, answer);
-      return `Research saved to database.`;
+      saveResearch(query, answer, credibility, sources);
+      return `Research saved to database. [credibility: ${credibility}]`;
     } catch (error) {
       return `Error saving research: ${error}`;
     }
