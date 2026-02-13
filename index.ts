@@ -90,13 +90,27 @@ console.log(dim("  ╭───────────────────�
 console.log(`  │  ⚡ ${bold("RawAGI")}                                    `);
 console.log(`  │  ${dim(`${provider.name} · ${provider.model}`)}${" ".repeat(Math.max(0, 33 - provider.name.length - provider.model.length))}`);
 console.log(dim("  ╰─────────────────────────────────────────────╯"));
-console.log(dim(`  Type your questions. ${cyan('"exit"')} to quit.\n`));
+console.log(dim(`  Type your questions. ${cyan("/tools")} for available tools. ${cyan('"exit"')} to quit.\n`));
 
 while (true) {
   const input = prompt("\x1b[1mYou:\x1b[0m ");
   if (!input || input.trim().toLowerCase() === "exit") {
     console.log(dim("\n  👋 Goodbye!\n"));
     break;
+  }
+
+  if (input.trim().toLowerCase() === "/tools") {
+    console.log();
+    console.log(bold("  Available Tools:"));
+    console.log(`    ${cyan("think")}         Strategic reasoning and planning`);
+    console.log(`    ${cyan("web_search")}    Search the web for current info`);
+    console.log(`    ${cyan("fetch_url")}     Read a webpage in full`);
+    console.log(`    ${cyan("read_file")}     Read a local file`);
+    console.log(`    ${cyan("write_file")}    Write content to a file`);
+    console.log(`    ${cyan("append_file")}   Append content to a file`);
+    console.log(`    ${cyan("calculator")}    Evaluate math expressions`);
+    console.log();
+    continue;
   }
 
   const answer = await chat(input.trim());

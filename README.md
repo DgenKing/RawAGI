@@ -6,10 +6,10 @@ A framework-free AI research agent built in TypeScript/Bun. No LangChain. No abs
 
 ```
   ╭─────────────────────────────────────────────╮
-  │  ⚡ RawAGI                                    │
-  │  DeepSeek · deepseek-chat                   │
+  │  ⚡ RawAGI
+  │  DeepSeek · deepseek-chat
   ╰─────────────────────────────────────────────╯
-  Type your questions. "exit" to quit.
+  Type your questions. /tools for available tools. "exit" to quit.
 
 You: Is lab-grown meat approved in the US?
 
@@ -39,17 +39,23 @@ The entire agent is one loop:
 
 That's it. That's what LangChain, AutoGPT, and every other framework is doing. Here it's ~200 lines of TypeScript you can actually read.
 
-### The agent has three tools
+### Tools
 
 | Tool | What it does |
 |------|--------------|
 | `think` | Zero-side-effect reasoning scratchpad. The LLM plans strategy, challenges findings, decides next steps. |
 | `web_search` | Tavily API. Returns 5 results with trimmed snippets to keep context lean. |
+| `fetch_url` | Fetch full webpage content. Strips HTML to readable text. Used for deep reading when search snippets aren't enough. |
 | `read_file` | Read local files. |
+| `write_file` | Write content to a file. Creates or overwrites. |
+| `append_file` | Append content to a file. Creates if it doesn't exist. Great for building up reports incrementally. |
+| `calculator` | Evaluate math expressions. Supports arithmetic, exponents, and `Math` functions. |
+
+Type `/tools` in the chat to see all available tools at any time.
 
 ### What makes it a "Truth Engine"
 
-Three prompt layers that most agents skip:
+Four prompt layers that most agents skip:
 
 **1. Dynamic Strategy Selection** — Before searching, the agent classifies the query (simple fact / current event / deep analysis / comparison) and estimates how many searches it actually needs. Simple questions get 1-2 searches. Deep analysis gets 5+. It stops when it has enough.
 
@@ -60,6 +66,21 @@ Three prompt layers that most agents skip:
 - It must search for at least ONE source that disagrees.
 
 **3. Primary Source Protocol** — For science, health, or policy questions, it searches `site:who.int`, `site:fda.gov`, `site:nih.gov` instead of blog aggregators. WHO > healthline.com. The actual paper > a tweet about the paper.
+
+**4. Deep Reading** — When search snippets aren't enough, the agent uses `fetch_url` to read the most relevant source in full before drawing conclusions. Skipped for simple factual questions where snippets already contain the answer.
+
+---
+
+## Features
+
+- **7 tools** — think, search, fetch, read, write, append, calculate
+- **Multi-provider** — DeepSeek, OpenAI, Mistral, Groq, Ollama (local)
+- **Token tracking** — Live token usage and cache hit rates after every response
+- **Interactive chat** — Persistent conversation history across turns
+- **File I/O** — Agent can read, write, and append to local files (save reports, build logs)
+- **Deep reading** — Agent reads full articles when snippets aren't sufficient
+- **`/tools` command** — See all available tools from the chat
+- **Zero frameworks** — No LangChain, no abstractions, just the loop
 
 ---
 
@@ -122,7 +143,7 @@ All providers use the OpenAI-compatible chat completions format — same request
 ```
 index.ts      — Entry point. System prompt + interactive chat loop.
 agent.ts      — The agent loop. ~200 lines. No magic.
-tools.ts      — Tool definitions + handlers (think, web_search, read_file).
+tools.ts      — Tool definitions + handlers (7 tools).
 providers.ts  — LLM provider configs. Swap with one line.
 ```
 
