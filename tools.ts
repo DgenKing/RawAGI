@@ -109,6 +109,23 @@ This tool has no side effects — it just helps you reason strategically.`,
   {
     type: "function" as const,
     function: {
+      name: "calculator",
+      description: "Evaluate a math expression and return the result. Supports basic arithmetic (+, -, *, /), exponents (**), parentheses, and Math functions like Math.sqrt(), Math.round(), Math.PI, etc.",
+      parameters: {
+        type: "object",
+        properties: {
+          expression: {
+            type: "string",
+            description: "The math expression to evaluate, e.g. '(100 * 1.15) / 12' or 'Math.sqrt(144)'",
+          },
+        },
+        required: ["expression"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
       name: "read_file",
       description: "Read the contents of a local file.",
       parameters: {
@@ -210,6 +227,19 @@ export const toolHandlers: Record<string, ToolHandler> = {
       return `File written: ${path}`;
     } catch (error) {
       return `Error writing file: ${error}`;
+    }
+  },
+
+  calculator: async ({ expression = "" }) => {
+    try {
+      // Only allow safe math characters and Math functions
+      if (!/^[\d\s+\-*/().,%eE^Math.a-z]+$/i.test(expression)) {
+        return "Error: Invalid characters in expression. Only numbers, operators, and Math functions allowed.";
+      }
+      const result = new Function(`"use strict"; return (${expression})`)();
+      return `${expression} = ${result}`;
+    } catch (error) {
+      return `Error evaluating expression: ${error}`;
     }
   },
 
