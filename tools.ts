@@ -2,6 +2,8 @@
 // TOOLS - Functions your agent can use
 // ============================================
 
+import { saveResearch, searchHistory } from "./db";
+
 // --- Tool Schemas (what the LLM sees) ---
 
 export const toolSchemas = [
@@ -157,6 +159,44 @@ This tool has no side effects — it just helps you reason strategically.`,
       },
     },
   },
+  {
+    type: "function" as const,
+    function: {
+      name: "save_research",
+      description: "Save a research query and its answer to the local database. Use this after completing a research task so the user can find it later.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description: "The original research question",
+          },
+          answer: {
+            type: "string",
+            description: "The research findings/answer",
+          },
+        },
+        required: ["query", "answer"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "search_history",
+      description: "Search past research by keyword. Returns up to 5 most recent matching results from the local database.",
+      parameters: {
+        type: "object",
+        properties: {
+          keyword: {
+            type: "string",
+            description: "The keyword to search for in past research queries and answers",
+          },
+        },
+        required: ["keyword"],
+      },
+    },
+  },
 ];
 
 // --- Tool Handlers (what actually runs) ---
@@ -289,6 +329,23 @@ export const toolHandlers: Record<string, ToolHandler> = {
       return await file.text();
     } catch (error) {
       return `Error reading file: ${error}`;
+    }
+  },
+
+  save_research: async ({ query = "", answer = "" }) => {
+    try {
+      saveResearch(query, answer);
+      return `Research saved to database.`;
+    } catch (error) {
+      return `Error saving research: ${error}`;
+    }
+  },
+
+  search_history: async ({ keyword = "" }) => {
+    try {
+      return searchHistory(keyword);
+    } catch (error) {
+      return `Error searching history: ${error}`;
     }
   },
 };

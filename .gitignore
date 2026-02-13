@@ -38,3 +38,6 @@ private/
 
 # personal memory (not for sharing)
 memory.md
+
+# local research database
+*.db

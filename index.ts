@@ -127,6 +127,8 @@ while (true) {
     console.log(`    ${cyan("append_file")}   Append content to a file`);
     console.log(`    ${cyan("calculator")}    Evaluate math expressions`);
     console.log(`    ${cyan("save_memory")}   Save a note to long-term memory`);
+    console.log(`    ${cyan("save_research")} Save research to SQLite database`);
+    console.log(`    ${cyan("search_history")}Search past research by keyword`);
     console.log();
     continue;
   }
