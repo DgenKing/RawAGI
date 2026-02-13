@@ -35,3 +35,6 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # private
 private/
+
+# personal memory (not for sharing)
+memory.md
