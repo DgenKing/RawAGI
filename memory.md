@@ -1,0 +1,1 @@
+- [2026-02-13] User prefers short bullet point answers, not long prose

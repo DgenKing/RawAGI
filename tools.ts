@@ -50,6 +50,23 @@ This tool has no side effects — it just helps you reason strategically.`,
   {
     type: "function" as const,
     function: {
+      name: "save_memory",
+      description: "Save something important to long-term memory. This persists across sessions. Use this to remember user preferences, key facts discovered, useful research shortcuts, or anything worth knowing next time.",
+      parameters: {
+        type: "object",
+        properties: {
+          note: {
+            type: "string",
+            description: "The note to save. Be concise and specific. e.g. 'User prefers bullet points over prose' or 'UK net migration was 685k in Dec 2023 (Home Office)'",
+          },
+        },
+        required: ["note"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
       name: "write_file",
       description: "Write content to a local file. Creates the file if it doesn't exist, overwrites if it does.",
       parameters: {
@@ -197,6 +214,18 @@ export const toolHandlers: Record<string, ToolHandler> = {
     }
 
     return output;
+  },
+
+  save_memory: async ({ note = "" }) => {
+    try {
+      const file = Bun.file("memory.md");
+      const existing = await file.exists() ? await file.text() : "";
+      const timestamp = new Date().toISOString().split("T")[0];
+      await Bun.write("memory.md", existing + `- [${timestamp}] ${note}\n`);
+      return `Memory saved.`;
+    } catch (error) {
+      return `Error saving memory: ${error}`;
+    }
   },
 
   fetch_url: async ({ url = "" }) => {

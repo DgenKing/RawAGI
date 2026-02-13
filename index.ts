@@ -5,6 +5,13 @@
 import { providers } from "./providers";
 import { createChat } from "./agent";
 
+// --- Load persistent memory ---
+const memoryFile = Bun.file("memory.md");
+const memory = await memoryFile.exists() ? await memoryFile.text() : "";
+const memorySection = memory.trim()
+  ? `\n## Your Memory (from previous sessions)\n${memory.trim()}\n`
+  : "";
+
 // --- Pick your provider ---
 const provider = providers.deepseek;
 
@@ -76,6 +83,16 @@ factual questions where the snippet already contains the answer.
 - State confidence level (high/medium/low) on contested or emerging claims
 - Distinguish between well-established facts and contested/evolving claims
 
+## Memory
+You have persistent memory across sessions via the save_memory tool.
+
+Save a memory when you:
+- Learn a user preference ("user prefers concise bullet points")
+- Discover a key fact worth remembering ("UK net migration was 685k in Dec 2023")
+- Find a useful research shortcut ("site:gov.uk is best for UK policy")
+
+Do NOT save memory for every query — only things genuinely worth remembering long-term.
+${memorySection}
 You have access to tools. Use them strategically, not mechanically.`;
 
 // --- Interactive chat ---
@@ -109,6 +126,7 @@ while (true) {
     console.log(`    ${cyan("write_file")}    Write content to a file`);
     console.log(`    ${cyan("append_file")}   Append content to a file`);
     console.log(`    ${cyan("calculator")}    Evaluate math expressions`);
+    console.log(`    ${cyan("save_memory")}   Save a note to long-term memory`);
     console.log();
     continue;
   }
