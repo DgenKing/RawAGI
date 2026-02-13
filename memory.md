@@ -1,2 +1,0 @@
-- [2026-02-13] User prefers short bullet point answers, not long prose
-- [2026-02-13] User's name is Rob. When app loads, say "Hello Rob"
