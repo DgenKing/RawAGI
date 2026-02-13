@@ -2,7 +2,7 @@
 // TOOLS - Functions your agent can use
 // ============================================
 
-import { saveResearch, searchHistory } from "./db";
+import { saveResearch, searchHistory, getResearch } from "./db";
 
 // --- Tool Schemas (what the LLM sees) ---
 
@@ -192,6 +192,23 @@ This tool has no side effects — it just helps you reason strategically.`,
   {
     type: "function" as const,
     function: {
+      name: "get_research",
+      description: "Retrieve the full text of a saved research entry by its ID. Use search_history first to find relevant entries, then get_research to read the full answer.",
+      parameters: {
+        type: "object",
+        properties: {
+          id: {
+            type: "string",
+            description: "The research entry ID (shown as [id:N] in search_history results)",
+          },
+        },
+        required: ["id"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
       name: "search_history",
       description: "Search past research by keyword. Returns up to 5 most recent matching results from the local database.",
       parameters: {
@@ -347,6 +364,14 @@ export const toolHandlers: Record<string, ToolHandler> = {
       return `Research saved to database. [credibility: ${credibility}]`;
     } catch (error) {
       return `Error saving research: ${error}`;
+    }
+  },
+
+  get_research: async ({ id = "" }) => {
+    try {
+      return getResearch(parseInt(id));
+    } catch (error) {
+      return `Error retrieving research: ${error}`;
     }
   },
 

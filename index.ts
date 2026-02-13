@@ -130,6 +130,7 @@ while (true) {
     console.log(`    ${cyan("calculator")}    Evaluate math expressions`);
     console.log(`    ${cyan("save_memory")}   Save a note to long-term memory`);
     console.log(`    ${cyan("save_research")} Save research to SQLite database`);
+    console.log(`    ${cyan("get_research")}  Get full research entry by ID`);
     console.log(`    ${cyan("search_history")}Search past research by keyword`);
     console.log();
     continue;
