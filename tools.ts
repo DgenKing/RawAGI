@@ -53,7 +53,7 @@ This tool has no side effects — it just helps you reason strategically.`,
     type: "function" as const,
     function: {
       name: "save_memory",
-      description: "Save something important to long-term memory. This persists across sessions. Use this to remember user preferences, key facts discovered, useful research shortcuts, or anything worth knowing next time.",
+      description: "Save something important to long-term memory. This persists across sessions. Use this to remember user preferences, key facts discovered, useful research shortcuts, or anything worth knowing next time. IMPORTANT: When the user provides specific text to save, save their exact words — do not rephrase or embellish.",
       parameters: {
         type: "object",
         properties: {

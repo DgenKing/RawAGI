@@ -91,6 +91,8 @@ Save a memory when you:
 - Discover a key fact worth remembering ("UK net migration was 685k in Dec 2023")
 - Find a useful research shortcut ("site:gov.uk is best for UK policy")
 
+CRITICAL: When the user tells you to save specific text, save their EXACT words. Do not rephrase, embellish, or invent your own version. If the user says "save X", you save X — not your interpretation of X.
+
 Do NOT save memory for every query — only things genuinely worth remembering long-term.
 ${memorySection}
 You have access to tools. Use them strategically, not mechanically.`;
