@@ -108,6 +108,7 @@ const chat = createChat(provider, systemPrompt);
 const dim = (s: string) => `\x1b[90m${s}\x1b[0m`;
 const bold = (s: string) => `\x1b[1m${s}\x1b[0m`;
 const cyan = (s: string) => `\x1b[36m${s}\x1b[0m`;
+const red = (s: string) => `\x1b[31m${s}\x1b[0m`;
 
 console.log();
 console.log(dim("  ╭─────────────────────────────────────────────╮"));
@@ -119,6 +120,11 @@ console.log(dim(`  Type your questions. ${cyan("/tools")} for available tools. $
 while (true) {
   const input = prompt("\x1b[1mYou:\x1b[0m ");
   if (!input || input.trim().toLowerCase() === "exit") {
+    console.log(dim("\n  👋 Goodbye!\n"));
+    break;
+  }
+
+  if (input.trim().toLowerCase() === "/exit") {
     console.log(dim("\n  👋 Goodbye!\n"));
     break;
   }
@@ -141,8 +147,14 @@ while (true) {
     continue;
   }
 
-  const answer = await chat(input.trim());
-  console.log(dim("  ─".repeat(25)));
-  console.log(answer);
-  console.log(dim("  ─".repeat(25)) + "\n");
+  try {
+    const answer = await chat(input.trim());
+    console.log(dim("  ─".repeat(25)));
+    console.log(answer);
+    console.log(dim("  ─".repeat(25)) + "\n");
+  } catch (e: any) {
+    console.log(dim("  ─".repeat(25)));
+    console.log(`\n  ${red("Error:")} ${e.message}\n`);
+    console.log(dim("  ─".repeat(25)) + "\n");
+  }
 }

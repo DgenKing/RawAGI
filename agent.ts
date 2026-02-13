@@ -87,7 +87,11 @@ async function callLLM(
 
   if (!response.ok) {
     const error = await response.text();
-    throw new Error(`API error (${response.status}): ${error}`);
+    // Sanitize error - don't leak API keys or internal details
+    const sanitized = error.replace(/sk-[a-zA-Z0-9]+/g, "sk-***")
+                           .replace(/"api_key"\s*:\s*"[^"]*"/g, '"api_key": "***"')
+                           .slice(0, 200);
+    throw new Error(`API error (${response.status}): ${sanitized}`);
   }
 
   return response.json() as Promise<ChatResponse>;

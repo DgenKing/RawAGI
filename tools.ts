@@ -256,7 +256,11 @@ export const toolHandlers: Record<string, ToolHandler> = {
 
     if (!response.ok) {
       const error = await response.text();
-      return `Search error (${response.status}): ${error}`;
+      // Sanitize error - don't leak API keys
+      const sanitized = error.replace(/tvly-[a-zA-Z0-9]+/g, "tvly-***")
+                             .replace(/"api_key"\s*:\s*"[^"]*"/g, '"api_key": "***"')
+                             .slice(0, 200);
+      return `Search error (${response.status}): ${sanitized}`;
     }
 
     const data = (await response.json()) as {
