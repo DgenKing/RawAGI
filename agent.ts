@@ -13,6 +13,7 @@
 // is doing under the hood. Now you can see it.
 
 import type { Provider } from "./providers";
+import { getFullURL, getAuthHeaders } from "./providers";
 import { toolSchemas, toolHandlers } from "./tools";
 
 // --- Pretty terminal colors ---
@@ -65,32 +66,31 @@ type ChatResponse = {
 
 async function callLLM(
   provider: Provider,
-  messages: Message[]
+  messages: Message[],
+  tools: typeof toolSchemas = toolSchemas
 ): Promise<ChatResponse> {
-  const response = await fetch(
-    `${provider.baseURL}/chat/completions`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${provider.apiKey}`,
-      },
-      body: JSON.stringify({
-        model: provider.model,
-        messages,
-        tools: toolSchemas,
-        tool_choice: "auto", // Let the LLM decide when to use tools
-        temperature: 0.3,
-      }),
-    }
-  );
+  const url = getFullURL(provider);
+  const headers = getAuthHeaders(provider);
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      model: provider.model,
+      messages,
+      tools,
+      tool_choice: "auto", // Let the LLM decide when to use tools
+      temperature: 0.3,
+    }),
+  });
 
   if (!response.ok) {
     const error = await response.text();
     // Sanitize error - don't leak API keys or internal details
     const sanitized = error.replace(/sk-[a-zA-Z0-9]+/g, "sk-***")
                            .replace(/"api_key"\s*:\s*"[^"]*"/g, '"api_key": "***"')
-                           .slice(0, 200);
+                           .replace(/AIzaSy[a-zA-Z0-9_-]+/g, "AIzaSy***")
+                           .slice(0, 500);
     throw new Error(`API error (${response.status}): ${sanitized}`);
   }
 
@@ -104,6 +104,7 @@ async function callLLM(
 export function createChat(
   provider: Provider,
   systemPrompt: string,
+  tools: typeof toolSchemas = toolSchemas,
   maxIterations: number = 25 // High safety cap — the agent decides when to stop, not us
 ) {
   const messages: Message[] = [
@@ -120,7 +121,7 @@ export function createChat(
     for (let i = 0; i < maxIterations; i++) {
       console.log(c.dim(`  ● Step ${i + 1} ${"─".repeat(40)}`));
 
-      const response = await callLLM(provider, messages);
+      const response = await callLLM(provider, messages, tools);
 
       // Token tracking
       let tokenLine = "";
