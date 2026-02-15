@@ -97,6 +97,22 @@ async function callLLM(
   return response.json() as Promise<ChatResponse>;
 }
 
+// --- Tools that need user approval before executing ---
+const APPROVAL_TOOLS = ["write_file", "append_file"];
+
+function requestApproval(toolName: string, args: Record<string, string | undefined>): boolean {
+  const path = args.path || "unknown";
+  const content = args.content || "";
+  const sizeKB = (content.length / 1024).toFixed(1);
+  const preview = content.slice(0, 300).replace(/\n/g, "\\n");
+
+  console.log(c.yellow(`    ⚠️  ${toolName.toUpperCase()} → ${path} (${sizeKB}KB)`));
+  console.log(c.dim(`    Preview: ${preview}${content.length > 300 ? "..." : ""}`));
+
+  const answer = prompt(c.yellow("    Approve? (y/n): "));
+  return answer?.trim().toLowerCase() === "y";
+}
+
 // --- The Agent Loop ---
 
 // --- Interactive Chat (maintains conversation history) ---
@@ -165,6 +181,14 @@ export function createChat(
               content: `Error: Unknown tool "${toolName}"`,
             });
             console.log(`    ${c.red("✗ Unknown tool")}`);
+            continue;
+          }
+
+          // Check if this tool needs user approval
+          if (APPROVAL_TOOLS.includes(toolName) && !requestApproval(toolName, toolArgs)) {
+            const denied = `User denied ${toolName} to: ${toolArgs.path || "unknown"}`;
+            messages.push({ role: "tool", tool_call_id: toolCall.id, content: denied });
+            console.log(c.red(`    ✗ Denied`));
             continue;
           }
 
