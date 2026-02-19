@@ -48,11 +48,7 @@ export const providers = {
     model: "gpt-4o",
   },
 
-  minimax: {
-    name: "MiniMax",
-    baseURL: "https://api.minimax.io/v1",
-    apiKey: process.env.MINIMAX_API_KEY || "",
-    model: "MiniMax-M2.5",
+  model: "MiniMax-M2.5",
   },
 
   // Gemini via OpenAI-compatible endpoint
